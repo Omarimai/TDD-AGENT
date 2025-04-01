@@ -7,5 +7,5 @@ Uses Anthropic's Claude to generate implementation code
 Runs tests and iteratively improves code until all tests pass
 Offers refactoring suggestions with validation
 
-![TDD Automation Workflow](mermaid-diagram-2025-04-01-175842.png)
+![TDD Automation Workflow](mermaid-diagram-2025-04-01-175842.svg)
 
