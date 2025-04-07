@@ -30,7 +30,7 @@ jobs:
           # Run Jest with JSON reporter
           npx jest "$TEST_FILE" --json --outputFile=test-results.json || true
           
-          # Store test results in variable
+          # Store test results in variable and escape properly for environment variables
           TEST_RESULTS=$(cat test-results.json)
           echo "test_results<<EOF" >> $GITHUB_ENV
           echo "$TEST_RESULTS" >> $GITHUB_ENV
@@ -38,7 +38,18 @@ jobs:
           
       - name: Send results back to webhook
         if: always()
+        shell: bash
         run: |
-          curl -X POST ${{ github.event.client_payload.callback_url }} \
+          # Create a properly escaped JSON payload file
+          cat > payload.json << EOF
+          {
+            "test_file": "${{ github.event.client_payload.test_file }}",
+            "test_results": ${{ env.test_results }},
+            "commit_sha": "${{ github.sha }}"
+          }
+          EOF
+          
+          # Send the payload file
+          curl -X POST "${{ github.event.client_payload.callback_url }}" \
             -H "Content-Type: application/json" \
-            -d "{\"test_file\": \"${{ github.event.client_payload.test_file }}\", \"test_results\": ${{ env.test_results }}, \"commit_sha\": \"${{ github.sha }}\"}"
+            -d @payload.json
