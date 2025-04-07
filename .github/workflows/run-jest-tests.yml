@@ -41,7 +41,7 @@ jobs:
         shell: bash
         run: |
           # Create a properly escaped JSON payload file
-          cat > payload.json << EOF
+          cat > payload.json << 'EOF'
           {
             "test_file": "${{ github.event.client_payload.test_file }}",
             "test_results": ${{ env.test_results }},
