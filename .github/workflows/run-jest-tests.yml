@@ -1,0 +1,44 @@
+# .github/workflows/run-jest-tests.yml
+name: Run Jest Tests
+
+on:
+  repository_dispatch:
+    types: [run-tests]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run specific test file
+        id: run-test
+        run: |
+          TEST_FILE="${{ github.event.client_payload.test_file }}"
+          echo "Running test: $TEST_FILE"
+          
+          # Run Jest with JSON reporter
+          npx jest "$TEST_FILE" --json --outputFile=test-results.json || true
+          
+          # Store test results in variable
+          TEST_RESULTS=$(cat test-results.json)
+          echo "test_results<<EOF" >> $GITHUB_ENV
+          echo "$TEST_RESULTS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+      - name: Send results back to webhook
+        if: always()
+        run: |
+          curl -X POST ${{ github.event.client_payload.callback_url }} \
+            -H "Content-Type: application/json" \
+            -d "{\"test_file\": \"${{ github.event.client_payload.test_file }}\", \"test_results\": ${{ env.test_results }}, \"commit_sha\": \"${{ github.sha }}\"}"
